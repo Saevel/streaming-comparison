@@ -2,4 +2,8 @@ rootProject.name = 'streaming-comparison'
 include 'kafka-streams'
 include 'spark-structured-streaming'
 include 'flink'
+include 'devops'
+include 'stress-tests'
+include 'common'
+include 'common-tests'
 

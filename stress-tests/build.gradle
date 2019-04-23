@@ -1,0 +1,27 @@
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "gradle.plugin.com.github.lkishalmi.gatling:gradle-gatling-plugin:3.0.2"
+    }
+}
+
+group 'org.saevel'
+
+version '1.0'
+
+apply plugin: 'java'
+
+apply plugin: "com.github.lkishalmi.gatling"
+
+repositories {
+    jcenter()
+    mavenCentral()
+}
+
+dependencies {
+    compile group: 'io.gatling', name: 'gatling-core', version: '3.1.1'
+}

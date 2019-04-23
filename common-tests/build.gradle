@@ -1,0 +1,16 @@
+group 'org.saevel'
+
+version '1.0'
+
+apply plugin: "scala"
+
+repositories {
+    jcenter()
+    mavenCentral()
+}
+
+dependencies {
+    compile group: 'org.scala-lang', name: 'scala-library', version: "${scalaVersion.major}.${scalaVersion.minor}"
+    compile group: 'org.scalatest', name: "scalatest_${scalaVersion.major}", version: '3.0.7'
+    compile group: 'org.scalacheck', name: "scalacheck_${scalaVersion.major}", version: '1.14.0'
+}

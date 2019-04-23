@@ -1,3 +1,16 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.bmuschko:gradle-docker-plugin:3.0.8'
+    }
+}
+
+apply plugin: 'com.bmuschko.docker-remote-api'
+
 group 'org.saevel'
 
 version '1.0'
@@ -12,4 +25,44 @@ repositories {
 dependencies {
     compile group: 'org.scala-lang', name: 'scala-library', version: "${scalaVersion.major}.${scalaVersion.minor}"
     compile group: 'org.apache.kafka', name: "kafka-streams-scala_${scalaVersion.major}", version: kafkaStreams.version
+    compile project(':common')
+
+    testCompile project(':common-tests')
 }
+
+docker {
+    url=System.getenv('DOCKER_MACHINE_URL')
+    certPath=file(System.getenv('DOCKER_CERT_PATH'))
+
+    registryCredentials {
+        url = System.getenv("DOCKER_REGISTRY_URL")
+        username = System.getenv("DOCKER_USERNAME")
+        password = System.getenv("DOCKER_PASSWORD")
+        email = System.getenv("DOCKER_USER_EMAIL")
+    }
+}
+
+import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
+import com.bmuschko.gradle.docker.tasks.image.DockerPushImage
+
+task prepareDockerBuild(type: Copy) {
+    from(project.buildDir.getAbsolutePath() + "/libs/" + project.name + "-" + project.version + "-standalone.jar")
+    into(project.buildDir.getAbsolutePath() + "/docker")
+
+    from(project.projectDir.getAbsolutePath() + "/src/main/docker")
+    into(project.buildDir.getAbsolutePath() + "/docker")
+}
+
+task dockerBuild(type: DockerBuildImage){
+    inputDir = project.file(project.buildDir.path + "/docker")
+    tag = System.getenv("DOCKER_USERNAME") + "/transaction-analytics-lambda-batch-layer"
+}
+
+task dockerize(type: DockerPushImage){
+    imageName = System.getenv("DOCKER_USERNAME") + "/transaction-analytics-lambda-batch-layer"
+}
+
+build.dependsOn dockerize
+dockerize.dependsOn dockerBuild
+dockerBuild.dependsOn prepareDockerBuild
+prepareDockerBuild.dependsOn jar

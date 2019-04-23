@@ -38,7 +38,11 @@ repositories {
 
 dependencies {
     compile group: 'org.scala-lang', name: 'scala-library', version: "${scalaVersion.major}.${scalaVersion.minor}"
+    compile project(':common')
+    
     provided group: 'org.apache.spark', name: "spark-sql_${scalaVersion.major}", version: spark.version
+
+    testCompile project(':common-tests')
 }
 
 jar {
@@ -57,3 +61,5 @@ shadowJar {
     append 'reference.conf'
     dependencies {}
 }
+
+build.dependsOn shadowJar
