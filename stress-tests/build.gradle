@@ -13,15 +13,44 @@ group 'org.saevel'
 
 version '1.0'
 
-apply plugin: 'java'
+apply plugin: 'scala'
 
 apply plugin: "com.github.lkishalmi.gatling"
 
 repositories {
     jcenter()
     mavenCentral()
+    maven {
+        url  "https://bintray.com/"
+    }
 }
 
+def gatling = [
+        "version": "3.1.1"
+]
+
 dependencies {
-    compile group: 'io.gatling', name: 'gatling-core', version: '3.1.1'
+    compile group: 'io.gatling', name: 'gatling-test-framework', version: gatling.version
+    compile group: 'io.gatling.highcharts', name: 'gatling-charts-highcharts', version: gatling.version
+
+    testCompile group: 'io.gatling', name: 'gatling-http', version: gatling.version
 }
+
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Implementation-Title': 'Preparing test',
+                'Implementation-Version': version,
+                'Main-Class': 'io.gatling.app.Gatling'
+    }
+    baseName = project.name + '-all'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } } {
+        exclude 'META-INF/MANIFEST.MF'
+        exclude 'META-INF/*.SF'
+        exclude 'META-INF/*.DSA'
+        exclude 'META-INF/*.RSA'
+
+    }
+    with jar
+}
+
+build.dependsOn fatJar

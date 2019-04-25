@@ -6,4 +6,5 @@ include 'devops'
 include 'stress-tests'
 include 'common'
 include 'common-tests'
+include 'akka-streams'
 

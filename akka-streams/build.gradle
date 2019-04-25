@@ -40,7 +40,8 @@ repositories {
 
 dependencies {
     compile group: 'org.scala-lang', name: 'scala-library', version: "${scalaVersion.major}.${scalaVersion.minor}"
-    compile group: 'org.apache.kafka', name: "kafka-streams-scala_${scalaVersion.major}", version: kafkaStreams.version
+    compile group: 'com.typesafe.akka', name: "akka-stream-kafka_${scalaVersion.major}", version: akkaStreams.version
+
     compile project(':common')
 
     testCompile project(':common-tests')
@@ -64,9 +65,9 @@ import com.bmuschko.gradle.docker.tasks.image.DockerPushImage
 jar {
     classifier = 'all'
     manifest {
-        attributes 'Implementation-Title': "Kafka-Streams",
+        attributes 'Implementation-Title': "Akka-Streams",
                 'Implementation-Version': version,
-                'Main-Class': "prv.saevel.streaming.comaprison.kafka.streams.KafkaStreamsApplication"
+                'Main-Class': "prv.saevel.streaming.comaprison.akka.streams.AkkaStreamsApplication"
     }
     include{sourceSets.main.output.classesDir}
     zip64 true
@@ -88,11 +89,11 @@ task prepareDockerBuild(type: Copy) {
 
 task dockerBuild(type: DockerBuildImage){
     inputDir = project.file(project.buildDir.path + "/docker")
-    tag = System.getenv("DOCKER_USERNAME") + "/streaming-comparison-kafka-streams"
+    tag = System.getenv("DOCKER_USERNAME") + "/streaming-comparison-akka-streams"
 }
 
 task dockerize(type: DockerPushImage){
-    imageName = System.getenv("DOCKER_USERNAME") + "/streaming-comparison-kafka-streams"
+    imageName = System.getenv("DOCKER_USERNAME") + "/streaming-comparison-akka-streams"
 }
 
 build.dependsOn dockerize

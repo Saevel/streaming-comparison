@@ -20,5 +20,9 @@ allprojects {
         kafkaStreams = [
                 "version": "2.2.0"
         ]
+        
+        akkaStreams = [
+                "version": "1.0.1"
+        ]
     }
 }
