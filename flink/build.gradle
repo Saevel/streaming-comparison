@@ -26,11 +26,10 @@ configurations {
 }
 
 sourceSets {
-    main {
-        compileClasspath += configurations.provided
-    }
+    main.compileClasspath += configurations.provided
+    test.compileClasspath += configurations.provided
+    test.runtimeClasspath += configurations.provided
 }
-
 
 repositories {
     jcenter()
@@ -41,8 +40,9 @@ dependencies {
     compile group: 'org.scala-lang', name: 'scala-library', version: "${scalaVersion.major}.${scalaVersion.minor}"
     compile project(':common')
     
-    provided group: 'org.apache.flink', name: "flink-streaming-scala_${scalaVersion.major}", version: flink.version 
-    
+    provided group: 'org.apache.flink', name: "flink-streaming-scala_${scalaVersion.major}", version: flink.version
+    compile group: 'org.apache.flink', name: "flink-connector-kafka_${scalaVersion.major}", version: flink.version
+
     testCompile project(':common-tests')
 }
 

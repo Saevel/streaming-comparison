@@ -1,0 +1,4 @@
+
+object FlinkApplication extends App {
+
+}

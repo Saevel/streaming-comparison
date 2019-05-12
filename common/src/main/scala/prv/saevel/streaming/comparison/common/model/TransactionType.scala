@@ -2,8 +2,6 @@ package prv.saevel.streaming.comparison.common.model
 
 sealed trait TransactionType
 
-case object Withdrawal
+case object Withdrawal extends TransactionType
 
-case object Transfer
-
-case object Insertion
+case object Insertion extends TransactionType

@@ -36,11 +36,18 @@ repositories {
     mavenCentral()
 }
 
+sourceSets {
+    main.compileClasspath += configurations.provided
+    test.compileClasspath += configurations.provided
+    test.runtimeClasspath += configurations.provided
+}
+
 dependencies {
     compile group: 'org.scala-lang', name: 'scala-library', version: "${scalaVersion.major}.${scalaVersion.minor}"
     compile project(':common')
     
     provided group: 'org.apache.spark', name: "spark-sql_${scalaVersion.major}", version: spark.version
+    provided group: 'org.apache.spark', name: "spark-sql-kafka-0-10_${scalaVersion.major}", version: spark.version
 
     testCompile project(':common-tests')
 }
