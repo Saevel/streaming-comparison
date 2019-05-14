@@ -2,6 +2,7 @@ package prv.saevel.streaming.comparison.flink
 
 import java.time.Duration
 
+import cats.implicits._
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
 import prv.saevel.streaming.comparison.common.config.{BasicConfig, KafkaConfiguration}
@@ -11,10 +12,9 @@ case class FlinkConfiguration(kafka: KafkaConfiguration, joinDuration: Duration,
 
 object FlinkConfiguration extends ConfigurationHelper {
 
-  def apply(config: Config): ValidatedNel[Throwable, FlinkConfiguration] = for {
-    kafkaSubconfig <- config.validatedConfig("kafka")
-    joinDuration <- config.validatedDuration("join.duration")
-    appName <- config.validatedString("application.name")
-    kafkaConfiguration <- KafkaConfiguration(kafkaSubconfig)
-  } yield FlinkConfiguration(kafkaConfiguration, joinDuration, appName)
+  def apply(config: Config): ValidatedNel[Throwable, FlinkConfiguration] = (
+    KafkaConfiguration(config.getConfig("kafka")),
+    config.validatedDuration("join.duration"),
+    config.validatedString("application.name")
+  ).mapN(FlinkConfiguration.apply)
 }

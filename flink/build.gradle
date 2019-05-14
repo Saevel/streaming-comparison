@@ -38,6 +38,9 @@ repositories {
 
 dependencies {
     compile group: 'org.scala-lang', name: 'scala-library', version: "${scalaVersion.major}.${scalaVersion.minor}"
+    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.5'
+    compile group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.5'
+    
     compile project(':common')
     
     provided group: 'org.apache.flink', name: "flink-streaming-scala_${scalaVersion.major}", version: flink.version

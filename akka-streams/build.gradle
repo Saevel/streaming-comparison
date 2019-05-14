@@ -41,7 +41,9 @@ repositories {
 dependencies {
     compile group: 'org.scala-lang', name: 'scala-library', version: "${scalaVersion.major}.${scalaVersion.minor}"
     compile group: 'com.typesafe.akka', name: "akka-stream-kafka_${scalaVersion.major}", version: akkaStreams.version
-
+    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.5'
+    compile group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.5'
+    
     compile project(':common')
 
     testCompile project(':common-tests')

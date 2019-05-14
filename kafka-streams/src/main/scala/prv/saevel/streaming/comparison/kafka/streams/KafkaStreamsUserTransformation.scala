@@ -16,7 +16,6 @@ object KafkaStreamsUserTransformation extends StreamProcessor[KafkaStreamsConfig
 
     import spray.json._
 
-    // TODO: Global KTable?
     context
       .stream[String, String](config.kafka.originalUsersTopic)
       .mapValues(s => JsonParser(s).convertTo[OriginalUser])

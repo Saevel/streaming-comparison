@@ -23,6 +23,9 @@ repositories {
     maven {
         url  "https://bintray.com/"
     }
+    maven {
+        url "https://dl.bintray.com/sbcd90/io.gatling/"
+    }
 }
 
 def gatling = [

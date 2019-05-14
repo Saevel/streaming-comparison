@@ -2,6 +2,7 @@ package prv.saevel.streaming.comparison.akka.streams
 
 import java.time.Duration
 
+import cats.implicits._
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
 import prv.saevel.streaming.comparison.common.config.{BasicConfig, KafkaConfiguration}
@@ -14,10 +15,9 @@ case class AkkaStreamsConfiguration(kafka: KafkaConfiguration,
 
 object AkkaStreamsConfiguration extends ConfigurationHelper {
 
-  def apply(config: Config): ValidatedNel[Throwable, AkkaStreamsConfiguration] = for {
-    joinDuration <- config.validatedDuration("join.duration")
-    appName <- config.validatedString("application.name")
-    kafkaSubconfig <- config.validatedConfig("kafka")
-    kafkaConfiguration <- KafkaConfiguration(kafkaSubconfig)
-  } yield AkkaStreamsConfiguration(kafkaConfiguration, joinDuration, appName, config)
+  def apply(config: => Config): ValidatedNel[Throwable, AkkaStreamsConfiguration] = (
+    KafkaConfiguration(config.getConfig("kafka")),
+    config.validatedDuration("join.duration"),
+    config.validatedString("application.name")
+  ).mapN(AkkaStreamsConfiguration(_, _, _, config))
 }

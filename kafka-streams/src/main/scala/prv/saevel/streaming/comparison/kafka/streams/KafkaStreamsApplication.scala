@@ -4,6 +4,7 @@ import java.time.Duration
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
+import com.typesafe.config.ConfigFactory
 import org.apache.kafka.streams.kstream.{GlobalKTable, JoinWindows}
 import org.apache.kafka.streams.scala.StreamsBuilder
 import org.apache.kafka.streams.scala.kstream.KStream
@@ -21,10 +22,9 @@ object KafkaStreamsApplication extends JsonFormats with ExternalConfiguration wi
 
   private val builder = new StreamsBuilder
 
-  private val configuration: ValidatedNel[Throwable, KafkaStreamsConfiguration] = for {
-    rawConf <- rawConfig
-    config <- KafkaStreamsConfiguration(rawConf)
-  } yield config
+  private val configuration: ValidatedNel[Throwable, KafkaStreamsConfiguration] = KafkaStreamsConfiguration(
+    rawConfig.getOrElse(ConfigFactory.empty)
+  )
 
   configuration match {
     case Valid(config) => withContext(config){ implicit streamsBuilder =>

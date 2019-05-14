@@ -1,6 +1,6 @@
 package prv.saevel.streaming.comparison.spark.sturctured.streaming
 
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{Encoders, Row, SparkSession}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.streaming.OutputMode
@@ -31,9 +31,9 @@ object SparkStreamingUserTransformation extends StreamProcessor[SparkConfigurati
       .option("subscribe", config.kafka.originalUsersTopic)
       .option("startingOffsets", "earliest")
       .load
-      .select(from_json($"value".cast("string"), originalUserSchema).as[OriginalUser])
+      .select(from_json($"value".cast(StringType), originalUserSchema).as[OriginalUser])
       .map(originalUser => (User(originalUser.id, originalUser.address, originalUser.country)))
-      .select($"id".as("key"), to_json(struct("*")).as("value"))
+      .select($"id".cast(StringType).as("key"), to_json(struct("*")).as("value"))
       .writeStream
       .format("kafka")
       .option("kafka.bootstrap.servers", config.kafka.bootstrapServers)
@@ -43,5 +43,6 @@ object SparkStreamingUserTransformation extends StreamProcessor[SparkConfigurati
       .start
   }
 
-  override def stopStream(implicit context: SparkSession): Unit = context.streams.get(queryName).stop
+  override def stopStream(implicit context: SparkSession): Unit =
+    context.streams.active.find(_.name == queryName).foreach(_.stop)
 }

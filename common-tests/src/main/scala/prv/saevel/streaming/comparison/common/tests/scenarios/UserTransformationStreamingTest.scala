@@ -1,29 +1,37 @@
 package prv.saevel.streaming.comparison.common.tests.scenarios
 
 import net.manub.embeddedkafka.{EmbeddedKafka, EmbeddedKafkaConfig}
-import org.apache.kafka.common.serialization.{LongDeserializer, StringDeserializer, LongSerializer, StringSerializer}
+import org.apache.kafka.common.serialization.{LongDeserializer, LongSerializer, StringDeserializer, StringSerializer}
 import org.scalacheck.Gen
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{Matchers, WordSpec}
 import prv.saevel.streaming.comparison.common.model._
 import prv.saevel.streaming.comparison.common.tests.utils.{NetworkUtils, StaticPropertyChecks, StreamingTest}
 import org.scalacheck.Arbitrary._
+import org.scalatest.time.{Minutes, Span}
 import prv.saevel.streaming.comparison.common.config.BasicConfig
 import prv.saevel.streaming.comparison.common.utils.{ContextProvider, JsonFormats, StreamProcessor}
 import spray.json.{JsonReader, JsonWriter}
 
 import scala.concurrent.ExecutionContext.Implicits._
+import scala.concurrent.Future
 
 abstract class UserTransformationStreamingTest[Config <: BasicConfig, ContextType, Component <: StreamProcessor[Config, ContextType]]
   extends WordSpec with Matchers with ScalaFutures with StreamingTest[JsonWriter, JsonReader, String, String]
     with StaticPropertyChecks with ContextProvider[Config, ContextType] with IntegrationPatience with BasicGenerators
     with EmbeddedKafka with NetworkUtils with JsonFormats {
 
+  override implicit val patienceConfig = PatienceConfig.apply(timeout = Span(3, Minutes))
+
   protected val kafkaPort: Int = randomAvailablePort
 
   protected val zookeeperPort: Int = randomAvailablePort
 
-  implicit val embeddedKafkaConfig = EmbeddedKafkaConfig(kafkaPort = kafkaPort, zooKeeperPort = zookeeperPort)
+  implicit val embeddedKafkaConfig = EmbeddedKafkaConfig(
+    kafkaPort = kafkaPort,
+    zooKeeperPort = zookeeperPort,
+    customBrokerProperties = Map("zookeeper.connection.timeout.ms" -> "5000")
+  )
 
   implicit val stringSerializer = new StringSerializer
 
@@ -45,7 +53,7 @@ abstract class UserTransformationStreamingTest[Config <: BasicConfig, ContextTyp
   protected def testUserTransformation(config: Config, processor: Component): Unit = forOneOf(originalAndTransformedUsers) { data =>
     withRunningKafka {
       val originalUsers = data.map{case (originalUser, _) => (originalUser.id, originalUser)}
-      val transformedUsers = data.map{case (_, user) => (user.id, user)}
+      val transformedUsers = data.map{case (_, user) => user}
 
       withContext(config){ implicit context =>
 
@@ -53,12 +61,14 @@ abstract class UserTransformationStreamingTest[Config <: BasicConfig, ContextTyp
 
         val futureOutput = for {
           _ <- writeStream(longSerializer, stringSerializer)(config.kafka.bootstrapServers)(config.kafka.originalUsersTopic, originalUsers)
-          out <- readStream[Long, User, LongDeserializer, StringDeserializer](longDeserializer, stringDeserializer)(config.kafka.bootstrapServers, config.kafka.usersOutputTopic)
+          _ <- Future(Thread.sleep(90 * 1000))
+          out <- readStream[String, User, StringDeserializer, StringDeserializer](stringDeserializer, stringDeserializer)(config.kafka.bootstrapServers, config.kafka.usersOutputTopic)
         } yield out
 
         whenReady(futureOutput){ users =>
           processor.stopStream
-          users should contain theSameElementsAs(transformedUsers)
+          val receivedUsers = users.map{ case (_, user) => user}
+          receivedUsers should contain theSameElementsAs(transformedUsers)
         }
       }
     }

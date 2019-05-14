@@ -11,6 +11,7 @@ trait StreamReader[Format[_], T] {
   def readStream[KeyType, DataType, KD <: Deserializer[_], VD <: Deserializer[_]](keyDeserializer: KD, valueDeserializer: VD)
                                                                                  (bootstrapServers: String,
                                                                                   topic: String,
+                                                                                  groupId: String = "default",
                                                                                   timeout: Duration = 5 seconds,
                                                                                   maxIterations: Long = 100)
                                                                                  (implicit deserializer: Format[DataType],
