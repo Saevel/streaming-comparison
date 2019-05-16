@@ -8,7 +8,9 @@ import com.typesafe.config.Config
 import prv.saevel.streaming.comparison.common.config.{BasicConfig, KafkaConfiguration}
 import prv.saevel.streaming.comparison.common.utils.ConfigurationHelper
 
-case class FlinkConfiguration(kafka: KafkaConfiguration, joinDuration: Duration, applicationName: String) extends BasicConfig
+import scala.concurrent.duration.FiniteDuration
+
+case class FlinkConfiguration(kafka: KafkaConfiguration, joinDuration: FiniteDuration, applicationName: String) extends BasicConfig
 
 object FlinkConfiguration extends ConfigurationHelper {
 

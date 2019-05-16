@@ -44,7 +44,7 @@ abstract class AggregationStreamingTest[Config <: BasicConfig, ContextType, Comp
   protected def transactions(accountId: Long): Gen[Seq[Transaction]] = smallInts.flatMap(Gen.listOfN(_, for {
     amount <- Gen.choose(10.0, 2000.0)
     id <- arbitrary[Long]
-    transactionType <- Gen.oneOf(Seq(Insertion, Withdrawal))
+    transactionType <- Gen.oneOf(Seq(TransactionType.Insertion, TransactionType.Withdrawal))
   } yield Transaction(id, accountId, amount, transactionType)))
 
   protected def accountsWithTransactions(userId: Long): Gen[Seq[(Account, Seq[Transaction])]] = smallInts.flatMap(Gen.listOfN(_, for {
@@ -85,7 +85,7 @@ abstract class AggregationStreamingTest[Config <: BasicConfig, ContextType, Comp
             accountsAndTransactions.map{ case (account, _) => (account.id, account)}
           }
           val transactions = scenario.data.flatMap{ case (_, accountsAndTransactions) =>
-            accountsAndTransactions.flatMap{ case (_, transactions) => transactions.map(t => (t.id, t))}
+            accountsAndTransactions.flatMap{ case (_, transactions) => transactions.map(t => (t.transactionId, t))}
           }
 
           withContext(config){ implicit context =>

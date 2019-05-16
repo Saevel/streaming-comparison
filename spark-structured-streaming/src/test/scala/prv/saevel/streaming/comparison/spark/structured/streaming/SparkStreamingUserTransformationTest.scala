@@ -19,7 +19,8 @@ class SparkStreamingUserTransformationTest extends UserTransformationStreamingTe
     KafkaConfiguration(s"127.0.0.1:${kafkaPort}", "original_users", "users", "accounts", "transactions","balance_reports", "statistics"),
     Duration.ofSeconds(30),
     "SparkStreamingUserTransformationTest",
-    "file:///checkpoints"
+    "file:///checkpoints",
+    Duration.ofSeconds(3)
   )
 
   private val processor: SparkStreamingUserTransformation.type = SparkStreamingUserTransformation

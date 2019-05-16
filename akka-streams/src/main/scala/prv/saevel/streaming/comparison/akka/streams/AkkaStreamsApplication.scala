@@ -13,7 +13,7 @@ object AkkaStreamsApplication extends App with ExternalConfiguration with AkkaSt
   configuration match {
     case Valid(config) => withContext(config){ implicit context =>
       AkkaStreamsUserTransformation.startStream(config)
-      // TODO: Run joins
+      AkkaStreamsBalanceVerification.startStream(config)
       // TODO: Run aggregations
     }
 

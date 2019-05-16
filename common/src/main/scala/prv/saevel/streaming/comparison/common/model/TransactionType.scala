@@ -1,7 +1,10 @@
 package prv.saevel.streaming.comparison.common.model
 
-sealed trait TransactionType
+case class TransactionType(kind: String)
 
-case object Withdrawal extends TransactionType
+object TransactionType {
 
-case object Insertion extends TransactionType
+  final val Withdrawal = "Withdrawal"
+
+  final val Insertion = "Insertion"
+}

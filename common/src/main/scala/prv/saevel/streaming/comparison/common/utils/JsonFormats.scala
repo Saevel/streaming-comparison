@@ -11,18 +11,20 @@ trait JsonFormats extends DefaultJsonProtocol {
 
   implicit val accountFormat = jsonFormat3(Account.apply)
 
+  /*
   implicit val transactionTypeFormat = new RootJsonFormat[TransactionType] {
     override def read(json: JsValue): TransactionType = json match {
-      case JsString("Insertion") => Insertion
-      case JsString("Withdrawal") => Withdrawal
+      case JsString("Insertion") => TransactionType.Insertion
+      case JsString("Withdrawal") => TransactionType.Withdrawal
       case other => throw new IllegalArgumentException(s"Cannot deserialize $other to a TransactionType")
     }
 
     override def write(obj: TransactionType): JsValue = obj match {
-      case Insertion => JsString("Insertion")
-      case Withdrawal => JsString("Withdrawal")
+      case TransactionType.Insertion => JsString("Insertion")
+      case TransactionType.Withdrawal => JsString("Withdrawal")
     }
   }
+  */
 
   implicit val transactionFormat = jsonFormat4(Transaction.apply)
 

@@ -7,7 +7,7 @@ import org.apache.spark.sql.streaming.OutputMode
 import prv.saevel.streaming.comparison.common.model.{OriginalUser, User}
 import prv.saevel.streaming.comparison.common.utils.StreamProcessor
 
-object SparkStreamingUserTransformation extends StreamProcessor[SparkConfiguration, SparkSession]{
+object SparkStreamingUserTransformation extends StreamProcessor[SparkConfiguration, SparkSession] with KafkaIO {
 
   private val queryName = "UserTransformationQuery"
 
@@ -24,23 +24,11 @@ object SparkStreamingUserTransformation extends StreamProcessor[SparkConfigurati
 
     import context.implicits._
 
-    context
-      .readStream
-      .format("kafka")
-      .option("kafka.bootstrap.servers", config.kafka.bootstrapServers)
-      .option("subscribe", config.kafka.originalUsersTopic)
-      .option("startingOffsets", "earliest")
-      .load
+    fromKafka(config, config.kafka.originalUsersTopic)
       .select(from_json($"value".cast(StringType), originalUserSchema).as[OriginalUser])
       .map(originalUser => (User(originalUser.id, originalUser.address, originalUser.country)))
       .select($"id".cast(StringType).as("key"), to_json(struct("*")).as("value"))
-      .writeStream
-      .format("kafka")
-      .option("kafka.bootstrap.servers", config.kafka.bootstrapServers)
-      .option("topic", config.kafka.usersOutputTopic)
-      .queryName(queryName)
-      .outputMode(OutputMode.Append)
-      .start
+      .toKafkaTopic(config.kafka.bootstrapServers, config.kafka.usersOutputTopic, queryName)
   }
 
   override def stopStream(implicit context: SparkSession): Unit =

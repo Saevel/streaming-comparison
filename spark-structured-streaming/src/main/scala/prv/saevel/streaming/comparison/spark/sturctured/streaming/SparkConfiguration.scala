@@ -10,7 +10,8 @@ import prv.saevel.streaming.comparison.common.utils.ConfigurationHelper
 case class SparkConfiguration(kafka: KafkaConfiguration,
                               joinDuration: Duration,
                               applicationName: String,
-                              checkpointLocation: String) extends BasicConfig
+                              checkpointLocation: String,
+                              watermark: Duration) extends BasicConfig
 
 object SparkConfiguration extends ConfigurationHelper {
 
@@ -18,6 +19,7 @@ object SparkConfiguration extends ConfigurationHelper {
     KafkaConfiguration(config.getConfig("kafka")),
     config.validatedDuration("join.duration"),
     config.validatedString("application.name"),
-    config.validatedString("checkpoint.location")
+    config.validatedString("checkpoint.location"),
+    config.validatedDuration("watermark.duration")
     ).mapN(SparkConfiguration.apply)
 }

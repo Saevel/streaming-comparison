@@ -25,12 +25,6 @@ abstract class JoinTransformationStreamingTest[Config <: BasicConfig, ContextTyp
 
   implicit val embeddedKafkaConfig = EmbeddedKafkaConfig(kafkaPort = kafkaPort, zooKeeperPort = zookeeperPort)
 
-  protected val processor: Component
-
-  protected val config: Config
-
-  protected val componentName: String
-
   type Scenario = (OriginalUser, Seq[(Account, Seq[Transaction])], Seq[AccountBalanceReport])
 
   protected val correctBalanceScenarios: Gen[Seq[Scenario]] = scenarios(true)
@@ -45,91 +39,51 @@ abstract class JoinTransformationStreamingTest[Config <: BasicConfig, ContextTyp
 
   protected implicit val longDeserializer = new LongDeserializer
 
-  componentName when {
+  protected def testBalances(config: Config, processor: Component): Unit = forOneOf(correctBalanceScenarios, incorrectBalanceScenarios) { (correctScenarios, incorrectScenarios) =>
+    withRunningKafka {
+      val originalUsers = (correctScenarios ++ incorrectScenarios).map{ case (originalUser, _, _) => (originalUser.id, originalUser)}
 
-    "given a list of correct balance scenarios" should {
-
-      "stream the correct AccountBalanceReports to the appropriate topic" in forOneOf(correctBalanceScenarios) { scenarios =>
-        withRunningKafka {
-          val originalUsers = scenarios.map{ case (originalUser, _, _) => (originalUser.id, originalUser)}
-
-          val accounts = scenarios.flatMap{case (_, accountsAndTransactions, _) =>
-            accountsAndTransactions.map{case (account, _) => (account.id, account)}
-          }
-
-          val transactions = scenarios.flatMap{case (_, accountsAndTransactions, _) =>
-            accountsAndTransactions.flatMap{case (_, transactions) => transactions.map(transaction => (transaction.id, transaction))}
-          }
-
-          val correctReports = scenarios.map{ case (_, _, report) => report}
-
-          withContext(config){ implicit context =>
-
-            processor.startStream(config)
-
-            val futureResults = for {
-              _ <- writeStream(longSerializer, stringSerializer)(config.kafka.bootstrapServers)(config.kafka.originalUsersTopic, originalUsers)
-              _ <- writeStream(longSerializer, stringSerializer)(config.kafka.bootstrapServers)(config.kafka.accountsTopic, accounts)
-              _ <- writeStream(longSerializer, stringSerializer)(config.kafka.bootstrapServers)(config.kafka.transactionsTopic, transactions)
-              results <- readStream[Long, AccountBalanceReport, LongDeserializer, StringDeserializer](longDeserializer, stringDeserializer)(config.kafka.bootstrapServers, config.kafka.balanceReportsTopic)
-            } yield results
-
-            whenReady(futureResults){ reports =>
-              processor.stopStream
-              reports should contain theSameElementsAs(correctReports)
-            }
-          }
-        }
+      val accounts = (correctScenarios ++ incorrectScenarios).flatMap{case (_, accountsAndTransactions, _) =>
+        accountsAndTransactions.map{case (account, _) => (account.id, account)}
       }
-    }
 
-    "given a list on incorrect balance scenarios" should {
+      val transactions = (correctScenarios ++ incorrectScenarios).flatMap{case (_, accountsAndTransactions, _) =>
+        accountsAndTransactions.flatMap{case (_, transactions) => transactions.map(transaction => (transaction.transactionId, transaction))}
+      }
 
-      "stream failed AccountBalanceReports to the appropriate topic" in forOneOf(incorrectBalanceScenarios) { scenarios =>
-        withRunningKafka {
+      val correctReports = correctScenarios.map{ case (_, _, report) => report}
+      val incorrectReports = incorrectScenarios.map{ case (_, _, report) => report}
 
-          val originalUsers = scenarios.map{ case (originalUser, _, _) => (originalUser.id, originalUser)}
+      val expectedReports = correctReports ++ incorrectReports
 
-          val accounts = scenarios.flatMap{case (_, accountsAndTransactions, _) =>
-            accountsAndTransactions.map{case (account, _) => (account.id, account)}
-          }
+      withContext(config){ implicit context =>
 
-          val transactions = scenarios.flatMap{case (_, accountsAndTransactions, _) =>
-            accountsAndTransactions.flatMap{case (_, transactions) => transactions.map(t => (t.id, t))}
-          }
+        processor.startStream(config)
 
-          val correctReports = scenarios.flatMap{ case (_, _, reports) => reports}
+        val futureResults = for {
+          _ <- writeStream(longSerializer, stringSerializer)(config.kafka.bootstrapServers)(config.kafka.originalUsersTopic, originalUsers)
+          _ <- writeStream(longSerializer, stringSerializer)(config.kafka.bootstrapServers)(config.kafka.accountsTopic, accounts)
+          _ <- writeStream(longSerializer, stringSerializer)(config.kafka.bootstrapServers)(config.kafka.transactionsTopic, transactions)
+          results <- readStream[String, AccountBalanceReport, StringDeserializer, StringDeserializer](stringDeserializer, stringDeserializer)(config.kafka.bootstrapServers, config.kafka.balanceReportsTopic)
+        } yield results
 
-          withContext(config) { implicit context =>
-
-            processor.startStream(config)
-
-            val futureResults = for {
-              _ <- writeStream(longSerializer, stringSerializer)(config.kafka.bootstrapServers)(config.kafka.originalUsersTopic, originalUsers)
-              _ <- writeStream(longSerializer, stringSerializer)(config.kafka.bootstrapServers)(config.kafka.accountsTopic, accounts)
-              _ <- writeStream(longSerializer, stringSerializer)(config.kafka.bootstrapServers)(config.kafka.transactionsTopic, transactions)
-              results <- readStream[Long, AccountBalanceReport, LongDeserializer, StringDeserializer](longDeserializer, stringDeserializer)(config.kafka.bootstrapServers,
-                config.kafka.balanceReportsTopic)
-            } yield results
-
-            whenReady(futureResults) { reports =>
-              processor.stopStream
-              reports should contain theSameElementsAs (correctReports)
-            }
-          }
+        whenReady(futureResults){ reports =>
+          processor.stopStream
+          val actualReports = reports.map(_._2)
+          actualReports should contain theSameElementsAs(expectedReports)
         }
       }
     }
   }
 
   protected def transactionsBalance(transactions: Seq[Transaction]): Double = transactions.map{
-    case Transaction(_, _, amount, Insertion) => amount
-    case Transaction(_, _, amount, Withdrawal) => (-1.0) * amount
+    case Transaction(_, _, amount, TransactionType.Insertion) => amount
+    case Transaction(_, _, amount, TransactionType.Withdrawal) => (-1.0) * amount
   }.fold(0.0)(_+_)
 
   protected def transactionsList(accountId: Long): Gen[List[Transaction]] = smallInts.flatMap(n => Gen.listOfN(n, for {
     id <- arbitrary[Long]
-    transactionType <- Gen.oneOf(Seq(Insertion, Withdrawal))
+    transactionType <- Gen.oneOf(Seq(TransactionType.Insertion, TransactionType.Withdrawal))
     amount <- Gen.choose(10, 2000.0)
   } yield Transaction(id, accountId, amount, transactionType)))
 

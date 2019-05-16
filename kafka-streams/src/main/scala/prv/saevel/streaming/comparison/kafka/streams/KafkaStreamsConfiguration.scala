@@ -11,6 +11,7 @@ import org.apache.kafka.streams.StreamsConfig
 import prv.saevel.streaming.comparison.common.config.{BasicConfig, KafkaConfiguration}
 import prv.saevel.streaming.comparison.common.utils.ConfigurationHelper
 
+
 case class KafkaStreamsConfiguration(kafka: KafkaConfiguration, joinDuration: Duration, applicationName: String) extends BasicConfig
 
 object KafkaStreamsConfiguration extends ConfigurationHelper {

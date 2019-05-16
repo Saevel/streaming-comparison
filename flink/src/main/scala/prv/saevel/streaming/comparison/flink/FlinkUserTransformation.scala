@@ -23,7 +23,6 @@ object FlinkUserTransformation extends StreamProcessor[FlinkConfiguration, Strea
       .addSink(producer(config.kafka))
   }
 
-  // TODO: Can a Flink stream can be stopped?
   override def stopStream(implicit context: StreamExecutionEnvironment): Unit = {}
 
   private def producer(config: KafkaConfiguration): FlinkKafkaProducer[String] = new FlinkKafkaProducer[String](
