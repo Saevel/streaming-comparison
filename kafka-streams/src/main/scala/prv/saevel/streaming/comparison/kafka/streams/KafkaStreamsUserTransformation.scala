@@ -4,9 +4,11 @@ import org.apache.kafka.streams.KafkaStreams
 import org.apache.kafka.streams.scala.StreamsBuilder
 import prv.saevel.streaming.comparison.common.model.{OriginalUser, User}
 import prv.saevel.streaming.comparison.common.utils.{JsonFormats, StreamProcessor}
-import spray.json._
 
 object KafkaStreamsUserTransformation extends StreamProcessor[KafkaStreamsConfiguration, StreamsBuilder] with JsonFormats {
+
+  import prv.saevel.streaming.comparison.kafka.streams.Implicits._
+  import spray.json._
 
   private var optionalStreams: Option[KafkaStreams] = None
 

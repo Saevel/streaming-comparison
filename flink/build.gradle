@@ -43,7 +43,7 @@ dependencies {
     
     compile project(':common')
     
-    compileOnly group: 'org.apache.flink', name: "flink-streaming-scala_${scalaVersion.major}", version: flink.version
+    provided group: 'org.apache.flink', name: "flink-streaming-scala_${scalaVersion.major}", version: flink.version
     compile group: 'org.apache.flink', name: "flink-connector-kafka_${scalaVersion.major}", version: flink.version
 
     testCompile project(':common-tests')

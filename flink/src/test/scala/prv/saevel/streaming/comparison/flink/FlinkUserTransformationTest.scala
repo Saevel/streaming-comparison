@@ -1,7 +1,5 @@
 package prv.saevel.streaming.comparison.flink
 
-import java.time.Duration
-
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
@@ -13,9 +11,11 @@ import prv.saevel.streaming.comparison.common.tests.utils.{JsonStreamReader, Jso
 class FlinkUserTransformationTest extends UserTransformationStreamingTest[FlinkConfiguration, StreamExecutionEnvironment, FlinkUserTransformation.type]
   with JsonStreamWriter with JsonStreamReader with FlinkContextProvider {
 
+  import scala.concurrent.duration._
+
   private val config: FlinkConfiguration = new FlinkConfiguration(
     KafkaConfiguration(s"127.0.0.1:$kafkaPort", "original_users", "users", "accounts", "transactions","balance_reports", "statistics"),
-    Duration.ofSeconds(30),
+    30 seconds,
     "FlinkUserTransformationTest"
   )
 

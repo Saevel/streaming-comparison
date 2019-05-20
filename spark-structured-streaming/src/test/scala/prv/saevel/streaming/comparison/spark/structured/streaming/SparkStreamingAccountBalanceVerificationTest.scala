@@ -14,7 +14,7 @@ import prv.saevel.streaming.comparison.spark.sturctured.streaming.{SparkConfigur
 class SparkStreamingAccountBalanceVerificationTest extends JoinTransformationStreamingTest[SparkConfiguration, SparkSession, SparkStreamingBalanceVerification.type]
   with SparkSessionProvider with JsonStreamReader with JsonStreamWriter {
 
-  private val config: SparkConfiguration = SparkConfiguration(
+  private val configuration: SparkConfiguration = SparkConfiguration(
     KafkaConfiguration(s"127.0.0.1:${kafkaPort}", "original_users", "users", "accounts", "transactions", "balance_reports", "statistics"),
     Duration.ofSeconds(30),
     "SparkStreamingAccountBalanceVerificationTest",
@@ -24,9 +24,14 @@ class SparkStreamingAccountBalanceVerificationTest extends JoinTransformationStr
 
   "SparkStreamingAccountBalanceVerification" when {
 
-    "given Accounts and matching Transactions on appropriate Kafka topics" should {
+    "given scenarios for correct balance verification" should {
 
-      "join them and verify account balance" in testBalances(config, SparkStreamingBalanceVerification)
+      "stream them to the appropriate output topic" in testCorrectBalances(configuration, SparkStreamingBalanceVerification)
+    }
+
+    "given scenarios for incorrect balance verification" should {
+
+      "stream them to the appropriate output topic" in testIncorrectBalances(configuration, SparkStreamingBalanceVerification)
     }
   }
 }

@@ -9,7 +9,7 @@ import org.apache.spark.sql.streaming.OutputMode
 import org.apache.spark.sql.types._
 import prv.saevel.streaming.comparison.common.model._
 
-object SparkStreamingBalanceVerification extends StreamProcessor[SparkConfiguration, SparkSession] with KafkaIO {
+object SparkStreamingBalanceVerification extends StreamProcessor[SparkConfiguration, SparkSession] with SparkKafkaIO {
 
   private case class TransactionsBalance(accountId: Long, transactionsBalance: Double)
 
@@ -45,13 +45,13 @@ object SparkStreamingBalanceVerification extends StreamProcessor[SparkConfigurat
 
     import context.implicits._
 
-    val accounts: Dataset[AccountWithTimestamp] = fromKafka(config, config.kafka.accountsTopic)
+    val accounts: Dataset[AccountWithTimestamp] = fromKafka(config.kafka.accountsTopic, config)
       .select(from_json($"value".cast(StringType), accountSchema).as[Account], $"timestamp".as[Timestamp])
       .map { case (account, timestamp) => AccountWithTimestamp(account.id, account.userId, account.balance, timestamp) }
       .withWatermark("timestamp", s"${config.watermark.toMillis} milliseconds")
       .cache
 
-    val transactions: Dataset[TransactionWithTimestamp] = fromKafka(config, config.kafka.transactionsTopic)
+    val transactions: Dataset[TransactionWithTimestamp] = fromKafka(config.kafka.transactionsTopic, config)
       .select(from_json($"value".cast(StringType), transactionSchema).as[Transaction], $"timestamp".as[Timestamp])
       .map { case (transaction, timestamp) => TransactionWithTimestamp(transaction.transactionId, transaction.accountId, transaction.value, transaction.transactionType, timestamp) }
       .withWatermark("timestamp", s"${config.watermark.toMillis} milliseconds")
@@ -64,7 +64,7 @@ object SparkStreamingBalanceVerification extends StreamProcessor[SparkConfigurat
       .mapGroups { case (_, iterator) => (iterator.map(_._1).next, iterator.map(_._2)) }
       .map { case (account, transactions) => toReport(account, transactions) }
       .select($"accountId".cast(StringType).as("key"), to_json(struct("*")).as("value"))
-      .toKafkaTopic(config.kafka.bootstrapServers, config.kafka.balanceReportsTopic, queryName)
+      .toKafka(config.kafka.balanceReportsTopic, queryName, config)
   }
 
 

@@ -39,22 +39,19 @@ abstract class JoinTransformationStreamingTest[Config <: BasicConfig, ContextTyp
 
   protected implicit val longDeserializer = new LongDeserializer
 
-  protected def testBalances(config: Config, processor: Component): Unit = forOneOf(correctBalanceScenarios, incorrectBalanceScenarios) { (correctScenarios, incorrectScenarios) =>
+  protected def testCorrectBalances(config: Config, processor: Component): Unit = forOneOf(correctBalanceScenarios) { scenarios =>
     withRunningKafka {
-      val originalUsers = (correctScenarios ++ incorrectScenarios).map{ case (originalUser, _, _) => (originalUser.id, originalUser)}
+      val originalUsers = scenarios.map{ case (originalUser, _, _) => (originalUser.id, originalUser)}
 
-      val accounts = (correctScenarios ++ incorrectScenarios).flatMap{case (_, accountsAndTransactions, _) =>
+      val accounts = scenarios.flatMap{case (_, accountsAndTransactions, _) =>
         accountsAndTransactions.map{case (account, _) => (account.id, account)}
       }
 
-      val transactions = (correctScenarios ++ incorrectScenarios).flatMap{case (_, accountsAndTransactions, _) =>
+      val transactions = scenarios.flatMap{case (_, accountsAndTransactions, _) =>
         accountsAndTransactions.flatMap{case (_, transactions) => transactions.map(transaction => (transaction.transactionId, transaction))}
       }
 
-      val correctReports = correctScenarios.map{ case (_, _, report) => report}
-      val incorrectReports = incorrectScenarios.map{ case (_, _, report) => report}
-
-      val expectedReports = correctReports ++ incorrectReports
+      val correctReports = scenarios.map{ case (_, _, report) => report}
 
       withContext(config){ implicit context =>
 
@@ -64,13 +61,47 @@ abstract class JoinTransformationStreamingTest[Config <: BasicConfig, ContextTyp
           _ <- writeStream(longSerializer, stringSerializer)(config.kafka.bootstrapServers)(config.kafka.originalUsersTopic, originalUsers)
           _ <- writeStream(longSerializer, stringSerializer)(config.kafka.bootstrapServers)(config.kafka.accountsTopic, accounts)
           _ <- writeStream(longSerializer, stringSerializer)(config.kafka.bootstrapServers)(config.kafka.transactionsTopic, transactions)
-          results <- readStream[String, AccountBalanceReport, StringDeserializer, StringDeserializer](stringDeserializer, stringDeserializer)(config.kafka.bootstrapServers, config.kafka.balanceReportsTopic)
+          results <- readStream[Long, AccountBalanceReport, LongDeserializer, StringDeserializer](longDeserializer, stringDeserializer)(config.kafka.bootstrapServers, config.kafka.balanceReportsTopic)
         } yield results
 
         whenReady(futureResults){ reports =>
           processor.stopStream
-          val actualReports = reports.map(_._2)
-          actualReports should contain theSameElementsAs(expectedReports)
+          reports should contain theSameElementsAs(correctReports)
+        }
+      }
+    }
+  }
+
+  protected def testIncorrectBalances(config: Config, processor: Component): Unit = forOneOf(incorrectBalanceScenarios) { scenarios =>
+    withRunningKafka {
+
+      val originalUsers = scenarios.map{ case (originalUser, _, _) => (originalUser.id, originalUser)}
+
+      val accounts = scenarios.flatMap{case (_, accountsAndTransactions, _) =>
+        accountsAndTransactions.map{case (account, _) => (account.id, account)}
+      }
+
+      val transactions = scenarios.flatMap{case (_, accountsAndTransactions, _) =>
+        accountsAndTransactions.flatMap{case (_, transactions) => transactions.map(t => (t.transactionId, t))}
+      }
+
+      val correctReports = scenarios.flatMap{ case (_, _, reports) => reports}
+
+      withContext(config) { implicit context =>
+
+        processor.startStream(config)
+
+        val futureResults = for {
+          _ <- writeStream(longSerializer, stringSerializer)(config.kafka.bootstrapServers)(config.kafka.originalUsersTopic, originalUsers)
+          _ <- writeStream(longSerializer, stringSerializer)(config.kafka.bootstrapServers)(config.kafka.accountsTopic, accounts)
+          _ <- writeStream(longSerializer, stringSerializer)(config.kafka.bootstrapServers)(config.kafka.transactionsTopic, transactions)
+          results <- readStream[Long, AccountBalanceReport, LongDeserializer, StringDeserializer](longDeserializer, stringDeserializer)(config.kafka.bootstrapServers,
+            config.kafka.balanceReportsTopic)
+        } yield results
+
+        whenReady(futureResults) { reports =>
+          processor.stopStream
+          reports should contain theSameElementsAs (correctReports)
         }
       }
     }
