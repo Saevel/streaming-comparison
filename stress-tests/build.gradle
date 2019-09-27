@@ -36,6 +36,8 @@ dependencies {
     compile group: 'io.gatling', name: 'gatling-test-framework', version: gatling.version
     compile group: 'io.gatling.highcharts', name: 'gatling-charts-highcharts', version: gatling.version
 
+    compile project(':common')
+    
     testCompile group: 'io.gatling', name: 'gatling-http', version: gatling.version
 }
 

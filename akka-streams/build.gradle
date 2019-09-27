@@ -49,6 +49,7 @@ dependencies {
     testCompile project(':common-tests')
 }
 
+// ADD LAZY CONFIG
 docker {
     url=System.getenv('DOCKER_MACHINE_URL')
     certPath=file(System.getenv('DOCKER_CERT_PATH'))

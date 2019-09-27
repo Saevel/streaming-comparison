@@ -47,8 +47,8 @@ dependencies {
     compile project(':common')
     compile group: 'com.thoughtworks.paranamer', name: 'paranamer', version: '2.8'
     
-    provided group: 'org.apache.spark', name: "spark-sql_${scalaVersion.major}", version: spark.version
-    provided group: 'org.apache.spark', name: "spark-sql-kafka-0-10_${scalaVersion.major}", version: spark.version
+    compileOnly group: 'org.apache.spark', name: "spark-sql_${scalaVersion.major}", version: spark.version
+    compileOnly group: 'org.apache.spark', name: "spark-sql-kafka-0-10_${scalaVersion.major}", version: spark.version
 
     testCompile(project(':common-tests')){
         exclude group: "com.fasterxml.jackson.core", module: "jackson-databind"

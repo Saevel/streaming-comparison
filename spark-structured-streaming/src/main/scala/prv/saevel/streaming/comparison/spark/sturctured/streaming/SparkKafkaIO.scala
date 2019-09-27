@@ -2,7 +2,6 @@ package prv.saevel.streaming.comparison.spark.sturctured.streaming
 
 import org.apache.spark.sql.streaming.OutputMode
 import org.apache.spark.sql.{Dataset, SparkSession}
-import prv.saevel.streaming.comparison.spark.sturctured.streaming.SparkStreamingUserTransformation.queryName
 
 trait SparkKafkaIO {
 
